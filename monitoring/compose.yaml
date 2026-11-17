@@ -20,10 +20,20 @@ services:
     environment:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: https://gregfana.latte.cx
+    networks:
+      default: {}
+      # Traefik (moonlink) reaches Grafana here; route lives in its dynamic_conf.yaml
+      dmz:
+        ipv4_address: 10.76.0.17
+        gw_priority: 100
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
       - ./dashboards:/var/lib/grafana/dashboards:ro
+networks:
+  dmz:
+    external: true
 volumes:
   prometheus-data:
   grafana-data:
