@@ -1,0 +1,600 @@
+{
+  "uid": "gregfana-players",
+  "title": "Gregfana / Players",
+  "description": "Lifetime = observed + optional imported baseline. Time is game ticks / 20, not wall time. Imports never affect activity rates. Missing data does not imply zero; check source health.",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": [
+    "gregfana",
+    "gtnh"
+  ],
+  "timezone": "browser",
+  "refresh": "15s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "player",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "query": "label_values(gregfana_player_info, player)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Lifetime playtime",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_play_seconds_observed{player=~\"$player\"} + gregfana_player_play_seconds_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime AFK time (ServerUtilities)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_afk_seconds_observed{player=~\"$player\"} + gregfana_player_afk_seconds_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime active time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_active_seconds_observed{player=~\"$player\"} + gregfana_player_active_seconds_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime blocks mined",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_blocks_mined_observed{player=~\"$player\"} + gregfana_player_blocks_mined_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime crafted items",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_items_crafted_observed{player=~\"$player\"} + gregfana_player_items_crafted_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime item uses (not consumption)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_items_used_observed{player=~\"$player\"} + gregfana_player_items_used_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 6,
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime movement",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_distance_meters_observed{player=~\"$player\"} + gregfana_player_distance_meters_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthm",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime deaths",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_deaths_observed{player=~\"$player\"} + gregfana_player_deaths_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime mob kills",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_mob_kills_observed{player=~\"$player\"} + gregfana_player_mob_kills_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime player kills",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(gregfana_player_player_kills_observed{player=~\"$player\"} + gregfana_player_player_kills_imported{player=~\"$player\"}) * on(player) group_left(name) gregfana_player_info",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Manual crafting operations / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_player_crafting_operations_total{player=~\"$player\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{player}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Manual crafting output items / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_player_manual_crafting_items_total{player=~\"$player\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{player}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Food/potion items consumed / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_player_items_consumed_total{player=~\"$player\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{player}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Mining / minute (new activity only)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min(deriv(gregfana_player_blocks_mined_observed{player=~\"$player\"}[5m]), 0) * 60",
+          "legendFormat": "{{player}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 14,
+      "gridPos": {
+        "x": 12,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Registered statistics: observed since installation",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_player_stat_observed{player=~\"$player\"}",
+          "legendFormat": "{{player}} / {{stat}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 15,
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "AFK source available",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_source_available{source=\"serverutilities_afk\"}",
+          "legendFormat": "{{player}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 16,
+      "gridPos": {
+        "x": 12,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      }
+    }
+  ]
+}

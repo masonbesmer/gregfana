@@ -1,0 +1,495 @@
+{
+  "uid": "gregfana-production",
+  "title": "Gregfana / Production",
+  "description": "Only supported processing is counted. Outputs are generated resources at completion, including voided output; they are not inventory deliveries. ME/dual-input/custom processing is unavailable. See coverage documentation.",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": [
+    "gregfana",
+    "gtnh"
+  ],
+  "timezone": "browser",
+  "refresh": "15s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "machine",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "query": "label_values(gregfana_machines_loaded, machine)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Loaded machines",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_machines_loaded{machine=~\"$machine\"}",
+          "legendFormat": "{{machine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Active machines",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_machines_active{machine=~\"$machine\"}",
+          "legendFormat": "{{machine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Supported configurations",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_machines_supported{machine=~\"$machine\"}",
+          "legendFormat": "{{machine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Unsupported configurations",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_machines_loaded{machine=~\"$machine\"} - gregfana_machines_supported{machine=~\"$machine\"}",
+          "legendFormat": "{{machine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Processing runs started / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_runs_started_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Processing runs completed / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_runs_completed_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 6,
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Recipe executions completed / minute (includes parallelism)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_recipes_completed_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Input items consumed / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_items_consumed_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Output items generated / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_items_produced_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Input fluid mB / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_fluid_consumed_millibuckets_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Output fluid mB / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_fluid_produced_millibuckets_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{recipe_map}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Produced items by resource / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_items_produced_by_resource_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{item}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Consumed items by resource / minute",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(gregfana_machine_items_consumed_by_resource_total{machine=~\"$machine\"}[$__rate_interval]) * 60",
+          "legendFormat": "{{machine}} / {{item}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      }
+    }
+  ]
+}

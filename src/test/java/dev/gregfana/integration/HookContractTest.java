@@ -1,0 +1,95 @@
+package dev.gregfana.integration;
+
+import static org.junit.Assert.*;
+
+import java.io.InputStream;
+
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+
+/** Verify injection anchors against the pinned GT bytecode without loading its optional integrations. */
+public class HookContractTest {
+
+    private static final String BASE = "gregtech/api/metatileentity/implementations/";
+
+    private ClassNode read(String name) throws Exception {
+        try (InputStream in = getClass().getClassLoader()
+            .getResourceAsStream(BASE + name + ".class")) {
+            assertNotNull("Pinned GT dev jar must be on test runtime", in);
+            ClassNode node = new ClassNode();
+            new ClassReader(in).accept(node, 0);
+            return node;
+        }
+    }
+
+    private MethodNode method(ClassNode c, String name, String desc) {
+        for (Object object : c.methods) {
+            MethodNode method = (MethodNode) object;
+            if (method.name.equals(name) && (desc == null || method.desc.equals(desc))) return method;
+        }
+        throw new AssertionError("Missing hook target " + name + desc);
+    }
+
+    @Test
+    public void basicCompletionAnchorPrecedesOutputTransferAndClear() throws Exception {
+        ClassNode basic = read("MTEBasicMachine");
+        method(basic, "checkRecipe", "(Z)I");
+        MethodNode tick = method(basic, "onPostTick", null);
+        int firstOutputRead = -1;
+        int progressWrite = -1;
+        int transfer = -1;
+        int clear = -1;
+        for (int i = 0; i < tick.instructions.size(); i++) {
+            AbstractInsnNode instruction = tick.instructions.get(i);
+            if (instruction instanceof FieldInsnNode) {
+                FieldInsnNode f = (FieldInsnNode) instruction;
+                if (f.name.equals("mOutputItems") && f.getOpcode() == 180 && firstOutputRead == -1) firstOutputRead = i;
+                if (f.name.equals("mProgresstime") && f.getOpcode() == 181 && progressWrite == -1) progressWrite = i;
+            }
+            if (instruction instanceof MethodInsnNode) {
+                MethodInsnNode m = (MethodInsnNode) instruction;
+                if (m.name.equals("addStackToSlot") && transfer == -1) transfer = i;
+                if (m.owner.equals("java/util/Arrays") && m.name.equals("fill") && clear == -1) clear = i;
+            }
+        }
+        assertTrue(
+            progressWrite >= 0 && progressWrite < firstOutputRead && firstOutputRead < transfer && transfer < clear);
+        // The completion hook must not be inside an output loop (which also evaluates its exit condition).
+        for (int i = progressWrite + 1; i < tick.instructions.size(); i++) {
+            if (tick.instructions.get(i) instanceof JumpInsnNode) {
+                int target = tick.instructions.indexOf(((JumpInsnNode) tick.instructions.get(i)).label);
+                assertFalse("Completion anchor is inside a loop", target <= progressWrite);
+            }
+        }
+    }
+
+    @Test
+    public void multiCompletionAnchorIsUniqueAndBeforeOutputs() throws Exception {
+        ClassNode multi = read("MTEMultiBlockBase");
+        method(multi, "checkRecipe", "()Z");
+        MethodNode run = method(multi, "runMachine", null);
+        int increments = 0;
+        int index = -1;
+        int output = -1;
+        for (int i = 0; i < run.instructions.size(); i++) {
+            AbstractInsnNode instruction = run.instructions.get(i);
+            if (instruction instanceof MethodInsnNode) {
+                MethodInsnNode m = (MethodInsnNode) instruction;
+                if (m.name.equals("incrementProgressTime")) {
+                    increments++;
+                    index = i;
+                    assertEquals(BASE + "MTEMultiBlockBase", m.owner);
+                }
+                if (m.name.equals("addItemOutputs")) output = i;
+            }
+        }
+        assertEquals(1, increments);
+        assertTrue(index >= 0 && output > index);
+    }
+}

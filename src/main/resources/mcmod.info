@@ -1,0 +1,1 @@
+{"modListVersion":2,"modList":[{"modid":"${modId}","name":"${modName}","version":"${modVersion}","mcversion":"${minecraftVersion}","description":"Server-side GTNH statistics exporter for Prometheus and Grafana.","authorList":["Gregfana contributors"]}]}
