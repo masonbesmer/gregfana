@@ -19,8 +19,12 @@ public class HookContractTest {
     private static final String BASE = "gregtech/api/metatileentity/implementations/";
 
     private ClassNode read(String name) throws Exception {
+        return readPath(BASE + name);
+    }
+
+    private ClassNode readPath(String path) throws Exception {
         try (InputStream in = getClass().getClassLoader()
-            .getResourceAsStream(BASE + name + ".class")) {
+            .getResourceAsStream(path + ".class")) {
             assertNotNull("Pinned GT dev jar must be on test runtime", in);
             ClassNode node = new ClassNode();
             new ClassReader(in).accept(node, 0);
@@ -91,5 +95,28 @@ public class HookContractTest {
         }
         assertEquals(1, increments);
         assertTrue(index >= 0 && output > index);
+    }
+
+    @Test
+    public void cokeOvenCompletionAnchorIsUniqueAndBeforeOutputClear() throws Exception {
+        ClassNode coke = readPath("gregtech/common/tileentities/machines/multi/MTECokeOven");
+        MethodNode check = method(coke, "checkRecipeProgress", null);
+        int calls = 0;
+        int anchor = -1;
+        int clear = -1;
+        for (int i = 0; i < check.instructions.size(); i++) {
+            AbstractInsnNode instruction = check.instructions.get(i);
+            if (instruction instanceof MethodInsnNode && ((MethodInsnNode) instruction).name.equals("addOutput")) {
+                calls++;
+                anchor = i;
+            }
+            if (instruction instanceof FieldInsnNode && ((FieldInsnNode) instruction).name.equals("mOutputItems")
+                && instruction.getOpcode() == 181
+                && clear == -1) clear = i;
+        }
+        assertEquals(1, calls);
+        assertTrue(anchor >= 0 && anchor < clear);
+        // The coke oven must still bypass the base-class hooks, or runs would be counted twice.
+        for (Object object : coke.methods) assertNotEquals("runMachine", ((MethodNode) object).name);
     }
 }

@@ -178,6 +178,32 @@ public final class Machines {
         }
     }
 
+    /** Coke oven: input is mInventory[0]; mInventory[1] is its output slot, so the multi snapshot does not apply. */
+    public static void cokeBefore(Object machine) {
+        try {
+            if (!enabled(machine)) return;
+            InputSnapshot snapshot = new InputSnapshot();
+            snapshot.item(((ItemStack[]) field(machine, "mInventory"))[0]);
+            INPUTS.put(machine, snapshot);
+        } catch (Exception | LinkageError e) {
+            failure(e);
+        }
+    }
+
+    /** A run started this tick iff a recipe is now set and has not progressed yet. */
+    public static void cokeAfter(Object machine) {
+        try {
+            if (!INPUTS.containsKey(machine)) return;
+            after(
+                machine,
+                ((Number) field(machine, "mMaxProgresstime")).intValue() > 0
+                    && ((Number) field(machine, "mProgresstime")).intValue() == 0);
+        } catch (Exception | LinkageError e) {
+            INPUTS.remove(machine);
+            failure(e);
+        }
+    }
+
     /** Called inside the completion branch, before output buffers are transferred/cleared. */
     public static void complete(Object machine, boolean basic) {
         try {

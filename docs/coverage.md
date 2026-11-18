@@ -10,6 +10,7 @@ This is a bounded first release, not a claim that every modpack action is observ
 | Completed food/potion use | Supported | Server `PlayerUseItemEvent.Finish`; creative consumption excluded |
 | Standard `MTEBasicMachine` processing | Supported | Inherited zero-argument and boolean recipe checks and `onPostTick`; physical input changes and completion buffers |
 | Standard `MTEMultiBlockBase` processing, including inherited extended-power paths | Supported with physical inputs | Inherited `checkProcessing`, `doCheckRecipe`, `runMachine`, input accessors, and custom-hatch check; completion counts current/loaded parallelism |
+| GT coke oven (`MTECokeOven`) | Supported | Dedicated hook on its private recipe loop; input slot 0 consumption, recipe outputs at completion |
 | ME input buses/hatches, dual-input inventories, debug input hatches | Unavailable for production | Deferred/virtual consumption cannot be inferred from a physical-stack snapshot |
 | Custom processing overrides, e.g. multi-furnace, integrated ore factory, specialized fusion/assembly paths | Unavailable unless they meet the standard runtime checks | Loaded/active controllers remain visible; no guessed production totals |
 | Generators, pipes, hatches as standalone devices, AE2/other mods' automation | Outside v1 production coverage | No production counters |
