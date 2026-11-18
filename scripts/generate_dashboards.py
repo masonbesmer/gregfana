@@ -36,7 +36,7 @@ def variable(key, metric, label=None):
 def write(name, panels, variables=(), description=""):
     for i, p in enumerate(panels):
         p["id"] = i + 1
-        p["gridPos"] = {"x": (i % 2) * 12, "y": (i // 2) * 8, "w": 12, "h": 8}
+        p.setdefault("gridPos", {"x": (i % 2) * 12, "y": (i // 2) * 8, "w": 12, "h": 8})
     variables = list(variables)
     dashboard = {
         "uid": "gregfana-" + name, "title": "Gregfana / " + name.title(),
@@ -134,6 +134,93 @@ def production():
           "they are not inventory deliveries. ME/dual-input/custom processing is unavailable. See coverage documentation.")
 
 
+ACTION_RE = "${action:regex}"
+ITEM = 'item=~"(?i).*${item}.*"'
+NAME = 'gregfana_player_info{name=~"$player"}'
+
+
+def gate(action):
+    """Pass-through vector iff `action` matches the Action filter (PromQL cannot filter labels after math)."""
+    return (f'(label_replace(label_replace(vector(1), "a", "{action}", "", ""), "ok", "y", "a", "{ACTION_RE}") '
+            'and on(ok) label_replace(vector(1), "ok", "y", "", ""))')
+
+
+def tagged(expr, action):
+    return f'(label_replace({expr}, "action", "{action}", "", "") and on() {gate(action)})'
+
+
+def per_player(expr):
+    return f"sum by (name, item) ({expr} * on(player) group_left(name) {NAME})"
+
+
+def feed_table(title, expr, who, y):
+    """One row per 1-minute bucket with activity; newest first."""
+    return {
+        "title": title, "type": "table", "datasource": DATASOURCE, "interval": "1m",
+        "gridPos": {"x": 0, "y": y, "w": 24, "h": 16},
+        "targets": [{"refId": "A", "expr": expr, "format": "table", "range": True, "instant": False,
+                     "interval": "1m"}],
+        "fieldConfig": {"defaults": {"custom": {"filterable": True, "align": "left"}}, "overrides": [
+            {"matcher": {"id": "byName", "options": "Time"}, "properties": [{"id": "custom.width", "value": 170}]},
+            {"matcher": {"id": "byName", "options": "Count"}, "properties": [{"id": "custom.width", "value": 90}]},
+        ]},
+        "options": {"showHeader": True, "cellHeight": "sm", "footer": {"show": False}},
+        "transformations": [
+            {"id": "organize", "options": {
+                "excludeByName": {"__name__": True},
+                "indexByName": {"Time": 0, who: 1, "action": 2, "item": 3, "Value": 4},
+                "renameByName": {who: who.title(), "action": "Action", "item": "Item", "Value": "Count"}}},
+            {"id": "sortBy", "options": {"sort": [{"field": "Time", "desc": True}]}},
+        ],
+    }
+
+
+def feed():
+    inc = "round(increase({}[1m]))"
+    stat = f'gregfana_player_stat_observed{{player=~".+",action=~"{ACTION_RE}",{ITEM}}}'
+    player_parts = [
+        # Per-item stats already carry action = mined / crafted / used / broken.
+        f"sum by (name, action, item) ({inc.format(stat)} * on(player) group_left(name) {NAME})",
+        tagged(per_player(inc.format(f"gregfana_player_blocks_placed_by_item_total{{{ITEM}}}")), "placed"),
+        tagged(per_player(inc.format(f"gregfana_player_items_consumed_by_item_total{{{ITEM}}}")), "consumed"),
+    ]
+    for stat_id, action in [("stat.deaths", "died"), ("stat.mobKills", "killed mob"),
+                            ("stat.playerKills", "killed player")]:
+        player_parts.append(tagged(per_player(inc.format(f'gregfana_player_stat_observed{{stat="{stat_id}"}}')),
+                                   action))
+    online = "(gregfana_player_online - gregfana_player_online offset 1m)"
+    player_parts.append(tagged(per_player(f"({online} == 1)"), "joined"))
+    player_parts.append(tagged(per_player(f"abs({online} == -1)"), "left"))
+    players = "(" + " or ".join(player_parts) + ") > 0"
+
+    machine_parts = []
+    for metric, key, action in [("items_produced", "item", "produced"), ("items_consumed", "item", "used input"),
+                                ("fluid_produced_millibuckets", "fluid", "produced mB"),
+                                ("fluid_consumed_millibuckets", "fluid", "used input mB")]:
+        series = f'gregfana_machine_{metric}_by_resource_total{{machine=~"$machine",{ITEM.replace("item", key, 1)}}}'
+        body = f"sum by (machine, {key}) ({inc.format(series)})"
+        if key == "fluid":
+            body = f'sum by (machine, item) (label_replace({body}, "item", "$1", "fluid", "(.*)"))'
+        machine_parts.append(tagged(body, action))
+    machines = "(" + " or ".join(machine_parts) + ") > 0"
+
+    actions = ["mined", "placed", "crafted", "used", "broken", "consumed", "died", "killed mob", "killed player",
+               "joined", "left", "produced", "used input", "produced mB", "used input mB"]
+    variables = [
+        {"name": "action", "label": "Action", "type": "custom", "query": ",".join(actions),
+         "includeAll": True, "allValue": ".*", "multi": True, "current": {"text": "All", "value": "$__all"}},
+        variable("player", "gregfana_player_info", "Player") | {"query": "label_values(gregfana_player_info, name)"},
+        variable("machine", '{__name__=~"gregfana_machine_.*_by_resource_total"}', "Machine"),
+        {"name": "item", "label": "Item contains", "type": "textbox", "query": "", "current": {"text": "", "value": ""}},
+    ]
+    write("feed", [
+        feed_table("Player feed", players, "name", 0),
+        feed_table("Machine feed", machines, "machine", 16),
+    ], variables,
+        "Activity per 1-minute bucket, newest first. Built from Prometheus counters: exact order within a minute, "
+        "coordinates and per-kill targets are not recorded. Column headers have their own filters too.")
+
+
 def health():
     write("health", [
         panel("Prometheus scrape up", 'up{job="gregfana"}', kind="stat"),
@@ -152,4 +239,5 @@ def health():
 if __name__ == "__main__":
     players()
     production()
+    feed()
     health()
