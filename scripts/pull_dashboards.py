@@ -3,8 +3,9 @@
 Pulls every dashboard tagged "gregfana". The file name is the UID without its "gregfana-" prefix,
 so a new dashboard should get the tag and a UID like "gregfana-<name>".
 
-    GRAFANA_TOKEN=<service account token> python scripts/pull_dashboards.py
-GRAFANA_URL defaults to https://gregfana.latte.cx.
+    python scripts/pull_dashboards.py
+GRAFANA_TOKEN (a service account token) and optional GRAFANA_URL (default https://gregfana.latte.cx)
+come from the environment or from the gitignored .env at the repo root.
 """
 import json
 import os
@@ -13,7 +14,13 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1] / "monitoring" / "dashboards"
+REPO = Path(__file__).resolve().parents[1]
+ROOT = REPO / "monitoring" / "dashboards"
+if (REPO / ".env").exists():
+    for line in (REPO / ".env").read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.partition("=")
+        if sep and not key.strip().startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip())
 URL = os.environ.get("GRAFANA_URL", "https://gregfana.latte.cx").rstrip("/")
 TOKEN = os.environ.get("GRAFANA_TOKEN") or sys.exit("Set GRAFANA_TOKEN to a Grafana service account token.")
 

@@ -14,7 +14,7 @@ export JAVA_HOME=~/.gradle/jdks/eclipse_adoptium-25-amd64-windows.2
 ./gradlew test --tests dev.gregfana.source.ItemsTest            # single test class
 ./gradlew test --tests 'dev.gregfana.integration.HookContractTest.cokeOven*'   # single method
 python scripts/check_jar.py                    # verifies Mixin metadata/refmaps and Java 8 bytecode in build/libs/gregfana-0.1.0.jar
-GRAFANA_TOKEN=... python scripts/pull_dashboards.py   # saves dashboards edited in Grafana to monitoring/dashboards/
+python scripts/pull_dashboards.py   # token from gitignored .env; saves dashboards edited in Grafana to monitoring/dashboards/
 ```
 
 - `build` fails on Spotless formatting. Run `spotlessApply` before it.
