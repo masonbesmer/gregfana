@@ -1,0 +1,117 @@
+# Feed events: one sample per non-empty 1-minute bucket, with real name/machine, action and item labels.
+# Dashboards filter these with plain label matchers, e.g.
+#   gregfana:feed_player_events:increase1m{action=~"${action:regex}", name=~"$player", item=~"(?i).*${item}.*"}
+# Rules only record from the moment they are deployed (backfill: promtool tsdb create-blocks-from rules).
+groups:
+  - name: gregfana-feed
+    interval: 1m
+    rules:
+      # Per-item stats already carry action = mined / crafted / used / broken.
+      # action!="" excludes non-item stats (playtime, distance).
+      - record: gregfana:feed_player_events:increase1m
+        expr: |
+          sum by (name, action, item) (
+            round(increase(gregfana_player_stat_observed{action!=""}[1m]))
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: placed}
+        expr: |
+          sum by (name, item) (
+            round(increase(gregfana_player_blocks_placed_by_item_total[1m]))
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: consumed}
+        expr: |
+          sum by (name, item) (
+            round(increase(gregfana_player_items_consumed_by_item_total[1m]))
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: died}
+        expr: |
+          sum by (name) (
+            round(increase(gregfana_player_stat_observed{stat="stat.deaths"}[1m]))
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: killed player}
+        expr: |
+          sum by (name) (
+            round(increase(gregfana_player_stat_observed{stat="stat.playerKills"}[1m]))
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      # Per-mob kills/deaths: the mob name becomes the item.
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: killed}
+        expr: |
+          sum by (name, item) (label_replace(
+            round(increase(gregfana_player_stat_observed{stat=~"stat.killEntity..*"}[1m])),
+            "item", "$1", "stat", "stat.killEntity.(.*)")
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: killed by}
+        expr: |
+          sum by (name, item) (label_replace(
+            round(increase(gregfana_player_stat_observed{stat=~"stat.entityKilledBy..*"}[1m])),
+            "item", "$1", "stat", "stat.entityKilledBy.(.*)")
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      # Damage stats are damage x 10 in half-hearts: / 20 = hearts, one decimal.
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: dealt damage, item: hearts}
+        expr: |
+          sum by (name) (
+            round(increase(gregfana_player_stat_observed{stat="stat.damageDealt"}[1m]) / 20, 0.1)
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: took damage, item: hearts}
+        expr: |
+          sum by (name) (
+            round(increase(gregfana_player_stat_observed{stat="stat.damageTaken"}[1m]) / 20, 0.1)
+            * on(player) group_left(name) gregfana_player_info
+          ) > 0
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: joined}
+        expr: |
+          sum by (name) (
+            ((gregfana_player_online - gregfana_player_online offset 1m) == 1)
+            * on(player) group_left(name) gregfana_player_info
+          )
+      - record: gregfana:feed_player_events:increase1m
+        labels: {action: left}
+        expr: |
+          sum by (name) (
+            abs((gregfana_player_online - gregfana_player_online offset 1m) == -1)
+            * on(player) group_left(name) gregfana_player_info
+          )
+
+      - record: gregfana:feed_machine_events:increase1m
+        labels: {action: produced}
+        expr: |
+          sum by (machine, item) (
+            round(increase(gregfana_machine_items_produced_by_resource_total[1m]))
+          ) > 0
+      - record: gregfana:feed_machine_events:increase1m
+        labels: {action: used input}
+        expr: |
+          sum by (machine, item) (
+            round(increase(gregfana_machine_items_consumed_by_resource_total[1m]))
+          ) > 0
+      - record: gregfana:feed_machine_events:increase1m
+        labels: {action: produced mB}
+        expr: |
+          sum by (machine, item) (label_replace(
+            round(increase(gregfana_machine_fluid_produced_millibuckets_by_resource_total[1m])),
+            "item", "$1", "fluid", "(.*)")
+          ) > 0
+      - record: gregfana:feed_machine_events:increase1m
+        labels: {action: used input mB}
+        expr: |
+          sum by (machine, item) (label_replace(
+            round(increase(gregfana_machine_fluid_consumed_millibuckets_by_resource_total[1m])),
+            "item", "$1", "fluid", "(.*)")
+          ) > 0

@@ -5,6 +5,7 @@ providers:
     folder: Gregfana
     type: file
     disableDeletion: false
-    editable: false
+    # Edit in Grafana, then run scripts/pull_dashboards.py and commit. A file change overwrites UI edits.
+    allowUiUpdates: true
     options:
       path: /var/lib/grafana/dashboards

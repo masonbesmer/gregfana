@@ -34,7 +34,7 @@ The mod defaults to loopback. **A Docker container cannot scrape the host's loop
 docker compose -f monitoring/compose.yaml up -d
 ```
 
-Open [Grafana](http://localhost:3000) and log in with the image's initial `admin` / `admin` credentials; Grafana asks you to change the password. Three dashboards appear in the **Gregfana** folder. [Prometheus](http://localhost:9090) is also bound to host loopback. The exporter has no authentication; keep it on a trusted monitoring network.
+Open [Grafana](http://localhost:3000) and log in with the image's initial `admin` / `admin` credentials; Grafana asks you to change the password. Four dashboards appear in the **Gregfana** folder. [Prometheus](http://localhost:9090) is also bound to host loopback. The exporter has no authentication; keep it on a trusted monitoring network.
 
 `monitoring/prometheus.yml` scrapes `host.docker.internal:9400` every 15 seconds. Compose provides the Linux host-gateway mapping; Docker Desktop supplies host routing on Windows/macOS. If Minecraft runs on another host or in another container, replace the target with that reachable hostname and port. Prometheus stores 90 days of time series; both services use persistent named volumes. `docker compose down` preserves them.
 
@@ -74,4 +74,4 @@ GT production counts actual physical-input decreases and generated output buffer
 - A busy/unreachable port disables HTTP but preserves collection. Check console logs and `/gregfana status`. The health dashboard reports stale snapshots, checkpoint failures, dropped detail, source availability, and hook errors.
 - Test modpack upgrades in a separate world. Hook contracts are pinned to 2.9.0; custom machine paths and changed GT releases need a new audit.
 
-See [validation](docs/validation.md) for automated checks, recorded results, and the in-world acceptance checklist. Dashboard JSON can be regenerated with `python scripts/generate_dashboards.py`.
+See [validation](docs/validation.md) for automated checks, recorded results, and the in-world acceptance checklist. To change dashboards, edit them in Grafana and save, then run `GRAFANA_TOKEN=<service account token> python scripts/pull_dashboards.py` and commit `monitoring/dashboards/`. The Feed reads Prometheus recording rules in `monitoring/rules/`.

@@ -16,7 +16,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew && ./gradlew build
       - run: python3 scripts/check_jar.py
-      - run: python3 scripts/generate_dashboards.py && git diff --exit-code monitoring/dashboards
+      - run: for f in monitoring/dashboards/*.json; do python3 -m json.tool "$f" >/dev/null || exit 1; done
+      - run: docker run --rm -v "$PWD/monitoring/rules:/r:ro" --entrypoint promtool prom/prometheus:v3.16.0 check rules --lint-fatal /r/feed.yml
       - run: docker compose -f monitoring/compose.yaml config --quiet
       - uses: actions/upload-artifact@v4
         with:

@@ -14,12 +14,12 @@ export JAVA_HOME=~/.gradle/jdks/eclipse_adoptium-25-amd64-windows.2
 ./gradlew test --tests dev.gregfana.source.ItemsTest            # single test class
 ./gradlew test --tests 'dev.gregfana.integration.HookContractTest.cokeOven*'   # single method
 python scripts/check_jar.py                    # verifies Mixin metadata/refmaps and Java 8 bytecode in build/libs/gregfana-0.1.0.jar
-python scripts/generate_dashboards.py          # regenerates monitoring/dashboards/*.json
+GRAFANA_TOKEN=... python scripts/pull_dashboards.py   # saves dashboards edited in Grafana to monitoring/dashboards/
 ```
 
 - `build` fails on Spotless formatting. Run `spotlessApply` before it.
 - Build the distributable jar `build/libs/gregfana-0.1.0.jar`, not the `-dev` or `-sources` jar.
-- CI (`.github/workflows/build.yml`) runs `build`, `check_jar.py`, and `docker compose config`. It also regenerates the dashboards and fails on `git diff`, so commit the regenerated JSON whenever you change `generate_dashboards.py`. Never hand-edit the dashboard JSON.
+- CI (`.github/workflows/build.yml`) runs `build`, `check_jar.py`, `docker compose config`, a JSON check of the dashboards, and `promtool check rules`.
 
 ## Architecture
 
@@ -55,11 +55,12 @@ python scripts/generate_dashboards.py          # regenerates monitoring/dashboar
 - `integration/ClassShapeTest` covers the dedicated-server class inspection.
 - `integration/SmokeExporter` is a test-only fixture that exports synthetic data. It must never end up in the jar; `check_jar.py` asserts that.
 
-**Dashboards** (`scripts/generate_dashboards.py`, stdlib Python):
-- Generates `players.json`, `production.json`, `feed.json`, and `health.json`.
-- The Feed dashboard builds a per-minute activity log from `increase(...[1m])` over counters. It needs no event store; Loki was rejected as too heavy.
-- Filtering by the custom `action` variable uses a PromQL "gate": the `vector(1)` + `label_replace` + `and on(ok)` pattern in `gate()`. It switches each sub-query on or off based on `${action:regex}`.
-- `action=~".*"` also matches an empty label. Keep `action!=""` wherever a query must exclude non-item stats.
+**Dashboards** (`monitoring/dashboards/*.json`, edited in Grafana):
+- Grafana is the editor; the JSON in git is the record. Provisioning has `allowUiUpdates: true`, so saves work in the UI. `scripts/pull_dashboards.py` pulls every dashboard tagged `gregfana` and names the file after the UID minus `gregfana-`.
+- Deploying a file overwrites unsaved-to-git UI edits of that dashboard, so pull before deploying.
+- The Feed dashboard reads recording rules in `monitoring/rules/feed.yml` (`gregfana:feed_player_events:increase1m`, `gregfana:feed_machine_events:increase1m`). Each sample is one non-empty 1-minute bucket with real `action`/`item` labels, so panels filter with plain matchers. Loki was rejected as too heavy.
+- Rules record only from deployment onward. Change the PromQL there, not in the panels.
+- Keep `action!=""` in rules that read `gregfana_player_stat_observed`, to exclude non-item stats.
 
 ## Deployment (this user's setup)
 
@@ -69,6 +70,7 @@ python scripts/generate_dashboards.py          # regenerates monitoring/dashboar
   - The exporter on port 9400 binds to the host's LAN interface, not localhost.
 - **Monitoring.** Grafana and Prometheus run on host `lostcoast`, in the Komodo stack `gregfana-monitoring`.
   - The stack is not linked to this repo; its compose file is defined inline in Komodo.
-  - To deploy dashboards, copy the generated JSON over the files of the same names in `/etc/komodo/stacks/gregfana-monitoring/dashboards/`. Grafana file provisioning reloads them. Copying under other names creates duplicate dashboard UIDs.
+  - To deploy dashboards, copy the JSON over the files of the same names in `/etc/komodo/stacks/gregfana-monitoring/dashboards/`. Grafana file provisioning reloads them. Copying under other names creates duplicate dashboard UIDs.
+- Recording rules live in `/etc/komodo/stacks/gregfana-monitoring/rules/`. After changing them, restart the `prometheus` service of the stack.
 - **xpipe.** sudo works only at the start of a command line. It fails inside pipes or `&&` chains, so run elevated commands on their own.
 - **Git.** Push directly to `main`.
