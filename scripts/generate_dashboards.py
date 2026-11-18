@@ -76,6 +76,22 @@ def players():
     panels.append(panel("Registered statistics: observed since installation", 
                         'gregfana_player_stat_observed{player=~"$player"}', legend="{{player}} / {{stat}}"))
     panels.append(panel("AFK source available", 'gregfana_source_available{source="serverutilities_afk"}', kind="stat"))
+    # Damage stats are damage x 10 in half-hearts: / 20 = hearts.
+    def raw(stat_re):
+        sel = f'{{stat=~"{stat_re}",player=~"$player"}}'
+        return f"(gregfana_player_stat_observed{sel} + gregfana_player_stat_imported{sel})"
+    named = " * on(player) group_left(name) gregfana_player_info"
+    for stat, title in [("stat.damageDealt", "Lifetime damage dealt (hearts)"),
+                        ("stat.damageTaken", "Lifetime damage taken (hearts)")]:
+        panels.append(panel(title, f"sum by (name) ({raw(stat)} / 20{named})", legend="{{name}}"))
+    panels.append(panel(
+        "Damage / minute (hearts, new activity only)",
+        'sum by (name, stat) (clamp_min(deriv(gregfana_player_stat_observed{stat=~"stat.damage(Dealt|Taken)",'
+        f'player=~"$player"}}[5m]), 0) * 60 / 20{named})', legend="{{name}} {{stat}}"))
+    for prefix, title in [("stat.killEntity.", "Lifetime kills by mob (top 25)"),
+                          ("stat.entityKilledBy.", "Lifetime deaths by mob (top 25)")]:
+        panels.append(bars(title, f'topk(25, sum by (mob) (label_replace({raw(prefix + ".*")}, "mob", "$1", "stat", '
+                                  f'"{prefix}(.*)")))', "{{mob}}"))
     # Per-item breakdowns. Stat items are registry names; event counters append ":meta".
     stat = 'player=~"$player",action=~"$action",item=~"$item"'
     lifetime = f'(gregfana_player_stat_observed{{{stat}}} + gregfana_player_stat_imported{{{stat}}})'
@@ -185,9 +201,18 @@ def feed():
         tagged(per_player(inc.format(f"gregfana_player_blocks_placed_by_item_total{{{ITEM}}}")), "placed"),
         tagged(per_player(inc.format(f"gregfana_player_items_consumed_by_item_total{{{ITEM}}}")), "consumed"),
     ]
-    for stat_id, action in [("stat.deaths", "died"), ("stat.mobKills", "killed mob"),
-                            ("stat.playerKills", "killed player")]:
+    for stat_id, action in [("stat.deaths", "died"), ("stat.playerKills", "killed player")]:
         player_parts.append(tagged(per_player(inc.format(f'gregfana_player_stat_observed{{stat="{stat_id}"}}')),
+                                   action))
+    # Per-mob kills/deaths: the mob name becomes the item, so "Item contains" filters by mob.
+    for prefix, action in [("stat.killEntity.", "killed"), ("stat.entityKilledBy.", "killed by")]:
+        sel = f'gregfana_player_stat_observed{{stat=~"{prefix}.*",stat=~"(?i).*${{item}}.*"}}'
+        player_parts.append(tagged(per_player(
+            f'label_replace({inc.format(sel)}, "item", "$1", "stat", "{prefix}(.*)")'), action))
+    # Damage x 10 in half-hearts -> hearts, one decimal.
+    for stat_id, action in [("stat.damageDealt", "dealt damage"), ("stat.damageTaken", "took damage")]:
+        sel = f'increase(gregfana_player_stat_observed{{stat="{stat_id}"}}[1m]) / 20'
+        player_parts.append(tagged(per_player(f'label_replace(round({sel}, 0.1), "item", "hearts", "", "")'),
                                    action))
     online = "(gregfana_player_online - gregfana_player_online offset 1m)"
     player_parts.append(tagged(per_player(f"({online} == 1)"), "joined"))
@@ -205,8 +230,8 @@ def feed():
         machine_parts.append(tagged(body, action))
     machines = "(" + " or ".join(machine_parts) + ") > 0"
 
-    actions = ["mined", "placed", "crafted", "used", "broken", "consumed", "died", "killed mob", "killed player",
-               "joined", "left", "produced", "used input", "produced mB", "used input mB"]
+    actions = ["mined", "placed", "crafted", "used", "broken", "consumed", "killed", "killed by", "died",
+               "killed player", "dealt damage", "took damage", "joined", "left", "produced", "used input", "produced mB", "used input mB"]
     variables = [
         {"name": "action", "label": "Action", "type": "custom", "query": ",".join(actions),
          "includeAll": True, "allValue": ".*", "multi": True, "current": {"text": "All", "value": "$__all"}},

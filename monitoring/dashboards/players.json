@@ -637,6 +637,193 @@
       }
     },
     {
+      "title": "Lifetime damage dealt (hearts)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (name) ((gregfana_player_stat_observed{stat=~\"stat.damageDealt\",player=~\"$player\"} + gregfana_player_stat_imported{stat=~\"stat.damageDealt\",player=~\"$player\"}) / 20 * on(player) group_left(name) gregfana_player_info)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 17,
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime damage taken (hearts)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (name) ((gregfana_player_stat_observed{stat=~\"stat.damageTaken\",player=~\"$player\"} + gregfana_player_stat_imported{stat=~\"stat.damageTaken\",player=~\"$player\"}) / 20 * on(player) group_left(name) gregfana_player_info)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 18,
+      "gridPos": {
+        "x": 12,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Damage / minute (hearts, new activity only)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (name, stat) (clamp_min(deriv(gregfana_player_stat_observed{stat=~\"stat.damage(Dealt|Taken)\",player=~\"$player\"}[5m]), 0) * 60 / 20 * on(player) group_left(name) gregfana_player_info)",
+          "legendFormat": "{{name}} {{stat}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 19,
+      "gridPos": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime kills by mob (top 25)",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(25, sum by (mob) (label_replace((gregfana_player_stat_observed{stat=~\"stat.killEntity..*\",player=~\"$player\"} + gregfana_player_stat_imported{stat=~\"stat.killEntity..*\",player=~\"$player\"}), \"mob\", \"$1\", \"stat\", \"stat.killEntity.(.*)\")))",
+          "legendFormat": "{{mob}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "x": 12,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime deaths by mob (top 25)",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(25, sum by (mob) (label_replace((gregfana_player_stat_observed{stat=~\"stat.entityKilledBy..*\",player=~\"$player\"} + gregfana_player_stat_imported{stat=~\"stat.entityKilledBy..*\",player=~\"$player\"}), \"mob\", \"$1\", \"stat\", \"stat.entityKilledBy.(.*)\")))",
+          "legendFormat": "{{mob}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "x": 0,
+        "y": 80,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
       "title": "Lifetime items by action (top 25)",
       "type": "bargauge",
       "datasource": {
@@ -669,10 +856,10 @@
           "values": false
         }
       },
-      "id": 17,
+      "id": 22,
       "gridPos": {
-        "x": 0,
-        "y": 64,
+        "x": 12,
+        "y": 80,
         "w": 12,
         "h": 8
       }
@@ -710,10 +897,10 @@
           "values": false
         }
       },
-      "id": 18,
+      "id": 23,
       "gridPos": {
-        "x": 12,
-        "y": 64,
+        "x": 0,
+        "y": 88,
         "w": 12,
         "h": 8
       }
@@ -745,10 +932,10 @@
           "placement": "bottom"
         }
       },
-      "id": 19,
+      "id": 24,
       "gridPos": {
-        "x": 0,
-        "y": 72,
+        "x": 12,
+        "y": 88,
         "w": 12,
         "h": 8
       }
@@ -780,10 +967,10 @@
           "placement": "bottom"
         }
       },
-      "id": 20,
+      "id": 25,
       "gridPos": {
-        "x": 12,
-        "y": 72,
+        "x": 0,
+        "y": 96,
         "w": 12,
         "h": 8
       }
@@ -821,10 +1008,10 @@
           "values": false
         }
       },
-      "id": 21,
+      "id": 26,
       "gridPos": {
-        "x": 0,
-        "y": 80,
+        "x": 12,
+        "y": 96,
         "w": 12,
         "h": 8
       }
@@ -862,10 +1049,10 @@
           "values": false
         }
       },
-      "id": 22,
+      "id": 27,
       "gridPos": {
-        "x": 12,
-        "y": 80,
+        "x": 0,
+        "y": 104,
         "w": 12,
         "h": 8
       }
