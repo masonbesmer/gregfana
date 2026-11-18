@@ -177,7 +177,8 @@ def feed_table(title, expr, who, y):
 
 def feed():
     inc = "round(increase({}[1m]))"
-    stat = f'gregfana_player_stat_observed{{player=~".+",action=~"{ACTION_RE}",{ITEM}}}'
+    # action!="" excludes non-item stats (playtime, distance), which an all-matching regex would include.
+    stat = f'gregfana_player_stat_observed{{action!="",action=~"{ACTION_RE}",{ITEM}}}'
     player_parts = [
         # Per-item stats already carry action = mined / crafted / used / broken.
         f"sum by (name, action, item) ({inc.format(stat)} * on(player) group_left(name) {NAME})",
