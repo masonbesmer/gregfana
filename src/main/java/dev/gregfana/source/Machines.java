@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +29,14 @@ public final class Machines {
 
     private static final String BASIC = "gregtech.api.metatileentity.implementations.MTEBasicMachine";
     private static final String MULTI = "gregtech.api.metatileentity.implementations.MTEMultiBlockBase";
+    /** {@code checkRecipe()} overrides hooked by SteamMachineMixin; keep in sync with its targets. */
+    public static final Set<String> STEAM_CHECKS = new HashSet<>(
+        Arrays.asList(
+            "gregtech.api.metatileentity.implementations.MTEBasicMachineBronze",
+            "gregtech.common.tileentities.machines.steam.MTESteamFurnaceBronze",
+            "gregtech.common.tileentities.machines.steam.MTESteamFurnaceSteel",
+            "gregtech.common.tileentities.machines.steam.MTESteamMaceratorBronze",
+            "gregtech.common.tileentities.machines.steam.MTESteamMaceratorSteel"));
     private static final Map<Class<?>, Map<String, MethodHandle>> METHODS = new HashMap<>();
     private static final Map<Class<?>, Map<String, Field>> FIELDS = new HashMap<>();
     /** Coverage levels: no counters / completions and outputs only / also physical input consumption. */
@@ -108,8 +117,11 @@ public final class Machines {
         boolean multi = inherits(machine, MULTI);
         if (!multi && !inherits(machine, BASIC)) return NONE;
         boolean standard = INPUTS_STANDARD.computeIfAbsent(machine.getClass(), c -> {
-            if (!multi)
-                return declaring(c, "checkRecipe", 0).equals(BASIC) && declaring(c, "checkRecipe", 1).equals(BASIC);
+            if (!multi) {
+                String check = declaring(c, "checkRecipe", 0);
+                return (check.equals(BASIC) || STEAM_CHECKS.contains(check))
+                    && declaring(c, "checkRecipe", 1).equals(BASIC);
+            }
             // Custom recipe selection is fine: consumption is measured as physical stack decreases.
             return declaring(c, "getStoredInputs", 0).equals(MULTI) && declaring(c, "getStoredFluids", 0).equals(MULTI);
         });

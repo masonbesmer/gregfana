@@ -119,4 +119,36 @@ public class HookContractTest {
         // The coke oven must still bypass the base-class hooks, or runs would be counted twice.
         for (Object object : coke.methods) assertNotEquals("runMachine", ((MethodNode) object).name);
     }
+
+    private static final String STEAM = "gregtech/common/tileentities/machines/steam/MTESteam";
+
+    @Test
+    public void steamCheckRecipeOverridesAreAllHookedExactlyOnce() throws Exception {
+        java.util.Set<String> declaring = new java.util.HashSet<>();
+        java.util.List<String> classes = new java.util.ArrayList<>(
+            java.util.Arrays.asList(BASE + "MTEBasicMachineBronze", BASE + "MTEBasicMachineSteel"));
+        for (String machine : new String[] { "AlloySmelter", "Compressor", "Extractor", "ForgeHammer", "Furnace",
+            "Macerator" }) for (String tier : new String[] { "Bronze", "Steel" }) classes.add(STEAM + machine + tier);
+        for (String path : classes) {
+            ClassNode c = readPath(path);
+            for (Object object : c.methods) {
+                MethodNode m = (MethodNode) object;
+                if (!m.name.equals("checkRecipe") || !m.desc.equals("()I")) continue;
+                declaring.add(path.replace('/', '.'));
+                // A super/overload call would run the hook twice (or the BasicMachineMixin hook as well).
+                for (int i = 0; i < m.instructions.size(); i++) if (m.instructions.get(i) instanceof MethodInsnNode)
+                    assertNotEquals(path, "checkRecipe", ((MethodInsnNode) m.instructions.get(i)).name);
+            }
+        }
+        assertEquals(dev.gregfana.source.Machines.STEAM_CHECKS, declaring);
+
+        ClassNode mixin = readPath("dev/gregfana/mixin/SteamMachineMixin");
+        java.util.Set<Object> targets = new java.util.HashSet<>();
+        for (Object a : mixin.invisibleAnnotations) {
+            java.util.List<?> values = ((org.objectweb.asm.tree.AnnotationNode) a).values;
+            for (int i = 0; values != null && i < values.size(); i += 2) if (values.get(i)
+                .equals("targets")) targets.addAll((java.util.List<?>) values.get(i + 1));
+        }
+        assertEquals(dev.gregfana.source.Machines.STEAM_CHECKS, targets);
+    }
 }

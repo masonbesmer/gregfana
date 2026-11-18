@@ -18,7 +18,8 @@ public final class LateMixins implements ILateMixinLoader {
 
     @Override
     public List<String> getMixins(Set<String> mods) {
-        return mods.contains("gregtech") ? Arrays.asList("BasicMachineMixin", "MultiMachineMixin", "CokeOvenMixin")
+        return mods.contains("gregtech")
+            ? Arrays.asList("BasicMachineMixin", "MultiMachineMixin", "CokeOvenMixin", "SteamMachineMixin")
             : Collections.emptyList();
     }
 }
