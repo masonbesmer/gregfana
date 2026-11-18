@@ -8,11 +8,11 @@ This is a bounded first release, not a claim that every modpack action is observ
 | ServerUtilities play / AFK / active leaderboard | Supported | Same underlying play and AFK stats, ticks / 20; AFK availability follows SU configuration |
 | Vanilla `SlotCrafting` and subclasses invoking its hooks | Supported | One completed pickup = one recipe operation; `amountCrafted` counts outputs, including shift-click |
 | Completed food/potion use | Supported | Server `PlayerUseItemEvent.Finish`; creative consumption excluded |
-| Standard `MTEBasicMachine` processing | Supported | Inherited zero-argument and boolean recipe checks and `onPostTick`; physical input changes and completion buffers |
-| Standard `MTEMultiBlockBase` processing, including inherited extended-power paths | Supported with physical inputs | Inherited `checkProcessing`, `doCheckRecipe`, `runMachine`, input accessors, and custom-hatch check; completion counts current/loaded parallelism |
+| `MTEBasicMachine` subclasses that reach its `onPostTick` progress step | Supported | Completions and output buffers; physical input changes when the recipe checks are inherited, otherwise outputs only |
+| `MTEMultiBlockBase` subclasses that reach its `runMachine` progress step, including custom recipe selection (`checkProcessing` overrides) | Supported | Completions, outputs and current/loaded parallelism; inputs measured as physical bus/hatch stack decreases when the input accessors are inherited. Custom-hatch inventories are not included |
 | GT coke oven (`MTECokeOven`) | Supported | Dedicated hook on its private recipe loop; input slot 0 consumption, recipe outputs at completion |
-| ME input buses/hatches, dual-input inventories, debug input hatches | Unavailable for production | Deferred/virtual consumption cannot be inferred from a physical-stack snapshot |
-| Custom processing overrides, e.g. multi-furnace, integrated ore factory, specialized fusion/assembly paths | Unavailable unless they meet the standard runtime checks | Loaded/active controllers remain visible; no guessed production totals |
+| ME input buses/hatches, dual-input inventories, debug input hatches | Outputs only | Deferred/virtual consumption cannot be inferred from a physical-stack snapshot; completions and outputs still count (`gregfana_machines_inputs_untracked`) |
+| Machines that replace the base processing loop (no hook reached) | Unsupported, detected at runtime | A class active across two collections (~10 s) without reaching any hook is logged and reported unsupported; seeing it hook once clears this. The coke oven has a dedicated hook |
 | Generators, pipes, hatches as standalone devices, AE2/other mods' automation | Outside v1 production coverage | No production counters |
 | Individual coordinates, ownership, team/base attribution | Outside v1 | Machine identity is GT's stable metatile name, including tier variants, plus recipe map |
 

@@ -37,6 +37,7 @@ public abstract class MultiMachineMixin {
             shift = At.Shift.AFTER),
         require = 1)
     private void gregfana$complete(CallbackInfo ci) {
+        Machines.seen(this);
         if (mMaxProgresstime > 0 && mProgresstime >= mMaxProgresstime) Machines.complete(this, false);
     }
 }

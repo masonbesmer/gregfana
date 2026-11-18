@@ -179,6 +179,41 @@
       }
     },
     {
+      "title": "Outputs only (inputs untracked: ME/dual/custom inputs)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gregfana_machines_inputs_untracked{machine=~\"$machine\"}",
+          "legendFormat": "{{machine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
       "title": "Processing runs started / minute",
       "type": "timeseries",
       "datasource": {
@@ -205,9 +240,9 @@
           "placement": "bottom"
         }
       },
-      "id": 5,
+      "id": 6,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 16,
         "w": 12,
         "h": 8
@@ -240,10 +275,10 @@
           "placement": "bottom"
         }
       },
-      "id": 6,
+      "id": 7,
       "gridPos": {
-        "x": 12,
-        "y": 16,
+        "x": 0,
+        "y": 24,
         "w": 12,
         "h": 8
       }
@@ -275,9 +310,9 @@
           "placement": "bottom"
         }
       },
-      "id": 7,
+      "id": 8,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 24,
         "w": 12,
         "h": 8
@@ -310,10 +345,10 @@
           "placement": "bottom"
         }
       },
-      "id": 8,
+      "id": 9,
       "gridPos": {
-        "x": 12,
-        "y": 24,
+        "x": 0,
+        "y": 32,
         "w": 12,
         "h": 8
       }
@@ -345,9 +380,9 @@
           "placement": "bottom"
         }
       },
-      "id": 9,
+      "id": 10,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 32,
         "w": 12,
         "h": 8
@@ -380,10 +415,10 @@
           "placement": "bottom"
         }
       },
-      "id": 10,
+      "id": 11,
       "gridPos": {
-        "x": 12,
-        "y": 32,
+        "x": 0,
+        "y": 40,
         "w": 12,
         "h": 8
       }
@@ -415,9 +450,9 @@
           "placement": "bottom"
         }
       },
-      "id": 11,
+      "id": 12,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 40,
         "w": 12,
         "h": 8
@@ -450,10 +485,10 @@
           "placement": "bottom"
         }
       },
-      "id": 12,
+      "id": 13,
       "gridPos": {
-        "x": 12,
-        "y": 40,
+        "x": 0,
+        "y": 48,
         "w": 12,
         "h": 8
       }
@@ -485,9 +520,9 @@
           "placement": "bottom"
         }
       },
-      "id": 13,
+      "id": 14,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 48,
         "w": 12,
         "h": 8

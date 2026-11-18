@@ -18,7 +18,7 @@ All metrics use the `gregfana_` prefix. No arbitrary NBT, coordinates, recipe ID
 | `machine_items_consumed_total`, `machine_items_produced_total` | Counter; `machine`, `recipe_map` | Physical input units / generated outputs |
 | `machine_fluid_consumed_millibuckets_total`, `machine_fluid_produced_millibuckets_total` | Counter; `machine`, `recipe_map` | Fluid amounts in mB |
 | `machine_<resource metric>_by_resource_total` | Counter; preceding labels plus `item` or `fluid` | Item/fluid breakdowns |
-| `machines_loaded`, `machines_active`, `machines_supported` | Gauge; `machine` | Loaded processing controller counts and coverage |
+| `machines_loaded`, `machines_active`, `machines_supported`, `machines_inputs_untracked` | Gauge; `machine` | Loaded processing controller counts and coverage; inputs_untracked = counted for completions/outputs only |
 | `source_available` | Gauge; `source` | 1 = available; 0 = disabled/unavailable |
 | `source_resets` | Gauge | Persisted count of source-stat resets detected |
 | `series` | Gauge | Number of stored series (excluding renderer diagnostics) |

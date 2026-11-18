@@ -5,10 +5,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -27,8 +30,15 @@ public final class Machines {
     private static final String MULTI = "gregtech.api.metatileentity.implementations.MTEMultiBlockBase";
     private static final Map<Class<?>, Map<String, MethodHandle>> METHODS = new HashMap<>();
     private static final Map<Class<?>, Map<String, Field>> FIELDS = new HashMap<>();
-    private static final Map<Class<?>, Boolean> SUPPORTED = new HashMap<>();
+    /** Coverage levels: no counters / completions and outputs only / also physical input consumption. */
+    public static final int NONE = 0, OUTPUTS = 1, FULL = 2;
+    private static final Map<Class<?>, Boolean> INPUTS_STANDARD = new HashMap<>();
     private static final Map<Object, InputSnapshot> INPUTS = new IdentityHashMap<>();
+    // Runtime bypass detection: machines whose ticks reached a hook since the last collection.
+    private static final Set<Object> SEEN = Collections.newSetFromMap(new IdentityHashMap<>());
+    private static final Set<Class<?>> HOOKED = new HashSet<>();
+    private static final Map<Class<?>, Integer> STRIKES = new HashMap<>();
+    private static final int BYPASS_STRIKES = 2;
 
     private Machines() {}
 
@@ -89,46 +99,50 @@ public final class Machines {
         return owner == null ? "" : owner.getName();
     }
 
-    public static boolean supported(Object machine) {
-        boolean standard = SUPPORTED.computeIfAbsent(machine.getClass(), c -> {
-            if (inherits(machine, BASIC))
-                return declaring(c, "onPostTick", 2).equals(BASIC) && declaring(c, "checkRecipe", 0).equals(BASIC)
-                    && declaring(c, "checkRecipe", 1).equals(BASIC);
-            if (inherits(machine, MULTI))
-                return declaring(c, "runMachine", 2).equals(MULTI) && declaring(c, "checkProcessing", 0).equals(MULTI)
-                    && declaring(c, "doCheckRecipe", 0).equals(MULTI)
-                    && declaring(c, "getStoredInputs", 0).equals(MULTI)
-                    && declaring(c, "getStoredFluids", 0).equals(MULTI)
-                    && declaring(c, "getStoredInputsForColor", 1).equals(MULTI)
-                    && declaring(c, "getStoredFluidsForColor", 1).equals(MULTI)
-                    && declaring(c, "checkRecipeForCustomHatches", 1).equals(MULTI);
-            return false;
+    /**
+     * Static checks only decide whether input snapshots are trustworthy. Whether the base processing loop runs at
+     * all is decided at runtime in {@link #collect}: a class that is active but never reaches a hook is a bypass.
+     */
+    public static int level(Object machine) {
+        if (STRIKES.getOrDefault(machine.getClass(), 0) >= BYPASS_STRIKES) return NONE;
+        boolean multi = inherits(machine, MULTI);
+        if (!multi && !inherits(machine, BASIC)) return NONE;
+        boolean standard = INPUTS_STANDARD.computeIfAbsent(machine.getClass(), c -> {
+            if (!multi)
+                return declaring(c, "checkRecipe", 0).equals(BASIC) && declaring(c, "checkRecipe", 1).equals(BASIC);
+            // Custom recipe selection is fine: consumption is measured as physical stack decreases.
+            return declaring(c, "getStoredInputs", 0).equals(MULTI) && declaring(c, "getStoredFluids", 0).equals(MULTI);
         });
-        if (!standard) return false;
-        if (inherits(machine, MULTI)) {
-            // Virtual inventories commit separately; report unsupported rather than inferred consumption.
-            if (!((List<?>) field(machine, "mDualInputHatches")).isEmpty()) return false;
+        if (!standard) return OUTPUTS;
+        if (multi) {
+            // Virtual inventories commit separately; count completions and outputs, not inferred consumption.
+            if (!((List<?>) field(machine, "mDualInputHatches")).isEmpty()) return OUTPUTS;
             for (String group : new String[] { "mInputBusses", "mInputHatches" }) {
-                for (Object hatch : (List<?>) field(machine, group)) if (hatch.getClass()
-                    .getName()
-                    .contains("ME")
-                    || hatch.getClass()
-                        .getName()
-                        .contains("Debug"))
-                    return false;
+                for (Object hatch : (List<?>) field(machine, group)) {
+                    String name = hatch.getClass()
+                        .getName();
+                    if (name.contains("ME") || name.contains("Debug")) return OUTPUTS;
+                }
             }
         }
-        return true;
+        return FULL;
     }
 
-    private static boolean enabled(Object machine) {
+    /** Called from per-tick hook points; must stay cheap. */
+    public static void seen(Object machine) {
         Gregfana mod = Gregfana.instance;
-        return mod != null && mod.ready
-            && mod.config.machines.matcher(
+        if (mod != null && mod.ready) SEEN.add(machine);
+    }
+
+    private static int enabled(Object machine) {
+        Gregfana mod = Gregfana.instance;
+        if (mod == null || !mod.ready
+            || !mod.config.machines.matcher(
                 machine.getClass()
                     .getName())
-                .matches()
-            && supported(machine);
+                .matches())
+            return NONE;
+        return level(machine);
     }
 
     private static Map<String, String> labels(Object machine) {
@@ -147,10 +161,14 @@ public final class Machines {
     }
 
     public static void before(Object machine, boolean basic) {
+        seen(machine);
         try {
-            if (!enabled(machine)) return;
+            int level = enabled(machine);
+            if (level == NONE) return;
             InputSnapshot snapshot = new InputSnapshot();
-            if (basic) {
+            if (level < FULL) {
+                // Outputs only: the empty snapshot still lets after() count the run start.
+            } else if (basic) {
                 for (ItemStack item : (ItemStack[]) call(machine, "getAllInputs")) snapshot.item(item);
                 snapshot.fluid((FluidStack) call(machine, "getFillableStack"));
             } else {
@@ -180,8 +198,9 @@ public final class Machines {
 
     /** Coke oven: input is mInventory[0]; mInventory[1] is its output slot, so the multi snapshot does not apply. */
     public static void cokeBefore(Object machine) {
+        seen(machine);
         try {
-            if (!enabled(machine)) return;
+            if (enabled(machine) < FULL) return;
             InputSnapshot snapshot = new InputSnapshot();
             snapshot.item(((ItemStack[]) field(machine, "mInventory"))[0]);
             INPUTS.put(machine, snapshot);
@@ -207,7 +226,7 @@ public final class Machines {
     /** Called inside the completion branch, before output buffers are transferred/cleared. */
     public static void complete(Object machine, boolean basic) {
         try {
-            if (!enabled(machine)) return;
+            if (enabled(machine) == NONE) return;
             if (((Number) field(machine, "mProgresstime")).intValue()
                 < ((Number) field(machine, "mMaxProgresstime")).intValue()) return;
             Map<String, String> labels = labels(machine);
@@ -249,6 +268,7 @@ public final class Machines {
 
     public static void collect(Gregfana mod) {
         Map<String, long[]> counts = new HashMap<>();
+        Set<Class<?>> unseenActive = new HashSet<>();
         for (WorldServer world : DimensionManager.getWorlds()) {
             for (Object obj : world.loadedTileEntityList) {
                 TileEntity tile = (TileEntity) obj;
@@ -263,22 +283,37 @@ public final class Machines {
                         .matches()) continue;
                     if (!inherits(machine, BASIC) && !inherits(machine, MULTI)) continue;
                     String type = String.valueOf(call(machine, "getMetaName"));
-                    long[] count = counts.computeIfAbsent(type, k -> new long[3]);
+                    long[] count = counts.computeIfAbsent(type, k -> new long[4]);
                     count[0]++;
-                    if ((Boolean) call(tile, "isActive")) count[1]++;
-                    if (supported(machine)) count[2]++;
+                    boolean active = (Boolean) call(tile, "isActive");
+                    if (active) count[1]++;
+                    Class<?> c = machine.getClass();
+                    if (SEEN.contains(machine)) {
+                        HOOKED.add(c);
+                        STRIKES.remove(c);
+                    } else if (active) unseenActive.add(c);
+                    int level = level(machine);
+                    if (level != NONE) count[2]++;
+                    if (level == OUTPUTS) count[3]++;
                 } catch (Exception | LinkageError e) {
                     failure(e);
                 }
             }
         }
+        // Active in consecutive collections without ever reaching a hook: the class runs its own loop.
+        // A class seen hooking even once is never flagged (an idle or stalled instance is not a bypass).
+        unseenActive.removeAll(HOOKED);
+        for (Class<?> c : unseenActive) if (STRIKES.merge(c, 1, Integer::sum) == BYPASS_STRIKES)
+            Gregfana.LOG.info("{} bypasses the standard processing loop; reporting it unsupported", c.getName());
+        SEEN.clear();
         for (String metric : new String[] { "gregfana_machines_loaded", "gregfana_machines_active",
-            "gregfana_machines_supported" }) mod.metrics.clearGauges(metric);
+            "gregfana_machines_supported", "gregfana_machines_inputs_untracked" }) mod.metrics.clearGauges(metric);
         counts.forEach((name, count) -> {
             Map<String, String> labels = Metrics.labels("machine", name);
             mod.metrics.gauge("gregfana_machines_loaded", labels, count[0], false);
             mod.metrics.gauge("gregfana_machines_active", labels, count[1], false);
             mod.metrics.gauge("gregfana_machines_supported", labels, count[2], false);
+            mod.metrics.gauge("gregfana_machines_inputs_untracked", labels, count[3], false);
         });
         // Drop snapshots left by exceptional recipe checks; never retain unloaded tile entities.
         INPUTS.clear();
@@ -288,7 +323,10 @@ public final class Machines {
         INPUTS.clear();
         METHODS.clear();
         FIELDS.clear();
-        SUPPORTED.clear();
+        INPUTS_STANDARD.clear();
+        SEEN.clear();
+        HOOKED.clear();
+        STRIKES.clear();
         ClassShape.clear();
     }
 

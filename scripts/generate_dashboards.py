@@ -110,6 +110,7 @@ def production():
         panel("Active machines", 'gregfana_machines_active{machine=~"$machine"}', legend="{{machine}}"),
         panel("Supported configurations", 'gregfana_machines_supported{machine=~"$machine"}', legend="{{machine}}"),
         panel("Unsupported configurations", 'gregfana_machines_loaded{machine=~"$machine"} - gregfana_machines_supported{machine=~"$machine"}', legend="{{machine}}"),
+        panel("Outputs only (inputs untracked: ME/dual/custom inputs)", 'gregfana_machines_inputs_untracked{machine=~"$machine"}', legend="{{machine}}"),
     ]
     for metric, title in [
         ("runs_started", "Processing runs started / minute"),
