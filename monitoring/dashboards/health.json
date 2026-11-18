@@ -1,372 +1,371 @@
 {
-  "uid": "gregfana-health",
-  "title": "Gregfana / Health",
   "description": "A stale snapshot can indicate collector failure even while HTTP is up.",
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"gregfana\"}",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prometheus scrape up",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "time() - gregfana_snapshot_timestamp_seconds",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Snapshot age",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "gregfana_series",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Series in exporter",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(gregfana_detail_dropped_total[$__rate_interval])",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Dropped detail samples / second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "gregfana_checkpoint_healthy",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Checkpoint healthy",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "time() - gregfana_checkpoint_last_success_timestamp_seconds",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Checkpoint age",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "gregfana_collection_seconds",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Collection pass duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "gregfana_source_available",
+          "legendFormat": "{{source}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Source availability",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "gregfana_source_resets",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Source resets",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(gregfana_machine_hook_errors_total[$__rate_interval])",
+          "legendFormat": "{{player}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Machine hook errors / second",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15s",
   "schemaVersion": 39,
-  "version": 1,
   "tags": [
     "gregfana",
     "gtnh"
   ],
-  "timezone": "browser",
-  "refresh": "15s",
+  "templating": {
+    "list": []
+  },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
-  "templating": {
-    "list": []
-  },
-  "panels": [
-    {
-      "title": "Prometheus scrape up",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "up{job=\"gregfana\"}",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 1,
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Snapshot age",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "time() - gregfana_snapshot_timestamp_seconds",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 2,
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Series in exporter",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana_series",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 3,
-      "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Dropped detail samples / second",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(gregfana_detail_dropped_total[$__rate_interval])",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 4,
-      "gridPos": {
-        "x": 12,
-        "y": 8,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Checkpoint healthy",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana_checkpoint_healthy",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 5,
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Checkpoint age",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "time() - gregfana_checkpoint_last_success_timestamp_seconds",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 6,
-      "gridPos": {
-        "x": 12,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Collection pass duration",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana_collection_seconds",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 7,
-      "gridPos": {
-        "x": 0,
-        "y": 24,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Source availability",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana_source_available",
-          "legendFormat": "{{source}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 8,
-      "gridPos": {
-        "x": 12,
-        "y": 24,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Source resets",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana_source_resets",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 9,
-      "gridPos": {
-        "x": 0,
-        "y": 32,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Machine hook errors / second",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(gregfana_machine_hook_errors_total[$__rate_interval])",
-          "legendFormat": "{{player}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        }
-      },
-      "id": 10,
-      "gridPos": {
-        "x": 12,
-        "y": 32,
-        "w": 12,
-        "h": 8
-      }
-    }
-  ]
+  "timezone": "browser",
+  "title": "Gregfana / Health",
+  "uid": "gregfana-health"
 }

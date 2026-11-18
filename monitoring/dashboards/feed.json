@@ -1,286 +1,285 @@
 {
-  "uid": "gregfana-feed",
-  "title": "Gregfana / Feed",
   "description": "Activity per 1-minute bucket, newest first. Built from Prometheus counters: exact order within a minute, coordinates and per-kill targets are not recorded. Column headers have their own filters too. Queries read recording rules from monitoring/rules/feed.yml.",
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "interval": "1m",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "gregfana:feed_player_events:increase1m{name=~\"$player\",action=~\"${action:regex}\",item=~\"(?i).*${item}.*\"}",
+          "format": "table",
+          "instant": false,
+          "interval": "1m",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Player feed",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "__name__": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 4,
+              "action": 2,
+              "item": 3,
+              "name": 1
+            },
+            "renameByName": {
+              "Value": "Count",
+              "action": "Action",
+              "item": "Item",
+              "name": "Name"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "desc": true,
+                "field": "Time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 2,
+      "interval": "1m",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "gregfana:feed_machine_events:increase1m{machine=~\"$machine\",action=~\"${action:regex}\",item=~\"(?i).*${item}.*\"}",
+          "format": "table",
+          "instant": false,
+          "interval": "1m",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Machine feed",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "__name__": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 4,
+              "action": 2,
+              "item": 3,
+              "machine": 1
+            },
+            "renameByName": {
+              "Value": "Count",
+              "action": "Action",
+              "item": "Item",
+              "machine": "Machine"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "desc": true,
+                "field": "Time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "15s",
   "schemaVersion": 39,
-  "version": 1,
   "tags": [
     "gregfana",
     "gtnh"
   ],
-  "timezone": "browser",
-  "refresh": "15s",
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action",
+        "query": "mined,placed,crafted,used,broken,consumed,killed,killed by,died,killed player,dealt damage,took damage,joined,left,produced,used input,produced mB,used input mB",
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "includeAll": true,
+        "label": "Player",
+        "multi": true,
+        "name": "player",
+        "query": "label_values(gregfana_player_info, name)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "includeAll": true,
+        "label": "Machine",
+        "multi": true,
+        "name": "machine",
+        "query": "label_values({__name__=~\"gregfana_machine_.*_by_resource_total\"}, machine)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "label": "Item contains",
+        "name": "item",
+        "query": "",
+        "type": "textbox"
+      }
+    ]
+  },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
-  "templating": {
-    "list": [
-      {
-        "name": "action",
-        "label": "Action",
-        "type": "custom",
-        "query": "mined,placed,crafted,used,broken,consumed,killed,killed by,died,killed player,dealt damage,took damage,joined,left,produced,used input,produced mB,used input mB",
-        "includeAll": true,
-        "allValue": ".*",
-        "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        }
-      },
-      {
-        "name": "player",
-        "label": "Player",
-        "type": "query",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "gregfana-prometheus"
-        },
-        "query": "label_values(gregfana_player_info, name)",
-        "refresh": 2,
-        "sort": 1,
-        "includeAll": true,
-        "allValue": ".*",
-        "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        }
-      },
-      {
-        "name": "machine",
-        "label": "Machine",
-        "type": "query",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "gregfana-prometheus"
-        },
-        "query": "label_values({__name__=~\"gregfana_machine_.*_by_resource_total\"}, machine)",
-        "refresh": 2,
-        "sort": 1,
-        "includeAll": true,
-        "allValue": ".*",
-        "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        }
-      },
-      {
-        "name": "item",
-        "label": "Item contains",
-        "type": "textbox",
-        "query": "",
-        "current": {
-          "text": "",
-          "value": ""
-        }
-      }
-    ]
-  },
-  "panels": [
-    {
-      "title": "Player feed",
-      "type": "table",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "interval": "1m",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 16
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana:feed_player_events:increase1m{name=~\"$player\",action=~\"${action:regex}\",item=~\"(?i).*${item}.*\"}",
-          "format": "table",
-          "range": true,
-          "instant": false,
-          "interval": "1m"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "filterable": true,
-            "align": "left"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 170
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true
-            },
-            "indexByName": {
-              "Time": 0,
-              "name": 1,
-              "action": 2,
-              "item": 3,
-              "Value": 4
-            },
-            "renameByName": {
-              "name": "Name",
-              "action": "Action",
-              "item": "Item",
-              "Value": "Count"
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "sort": [
-              {
-                "field": "Time",
-                "desc": true
-              }
-            ]
-          }
-        }
-      ],
-      "id": 1
-    },
-    {
-      "title": "Machine feed",
-      "type": "table",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "gregfana-prometheus"
-      },
-      "interval": "1m",
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 24,
-        "h": 16
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "gregfana:feed_machine_events:increase1m{machine=~\"$machine\",action=~\"${action:regex}\",item=~\"(?i).*${item}.*\"}",
-          "format": "table",
-          "range": true,
-          "instant": false,
-          "interval": "1m"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "filterable": true,
-            "align": "left"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 170
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true
-            },
-            "indexByName": {
-              "Time": 0,
-              "machine": 1,
-              "action": 2,
-              "item": 3,
-              "Value": 4
-            },
-            "renameByName": {
-              "machine": "Machine",
-              "action": "Action",
-              "item": "Item",
-              "Value": "Count"
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "sort": [
-              {
-                "field": "Time",
-                "desc": true
-              }
-            ]
-          }
-        }
-      ],
-      "id": 2
-    }
-  ]
+  "timezone": "browser",
+  "title": "Gregfana / Feed",
+  "uid": "gregfana-feed"
 }
