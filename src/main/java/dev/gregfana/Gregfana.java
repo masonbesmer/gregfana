@@ -9,6 +9,7 @@ import net.minecraft.item.ItemPotion;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
+import net.minecraftforge.event.world.BlockEvent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +20,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartedEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -178,6 +180,20 @@ public final class Gregfana {
                 .toString(),
             "items_consumed",
             event.item,
+            1);
+    }
+
+    // LOWEST + skip cancelled: only count placements no other mod reverted. MultiPlaceEvent (beds, doors) counts once.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void placed(BlockEvent.PlaceEvent event) {
+        if (!ready || !(event.player instanceof EntityPlayerMP)
+            || event.itemInHand == null
+            || event.itemInHand.getItem() == null) return;
+        action(
+            event.player.getUniqueID()
+                .toString(),
+            "blocks_placed",
+            event.itemInHand,
             1);
     }
 

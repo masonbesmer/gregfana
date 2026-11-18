@@ -1,7 +1,7 @@
 {
   "uid": "gregfana-players",
   "title": "Gregfana / Players",
-  "description": "Lifetime = observed + optional imported baseline. Time is game ticks / 20, not wall time. Imports never affect activity rates. Missing data does not imply zero; check source health.",
+  "description": "Lifetime = observed + optional imported baseline. Time is game ticks / 20, not wall time. Imports never affect activity rates. Missing data does not imply zero; check source health. Action/Item filter the per-item panels; 'used' includes block placement, 'Blocks placed' counts only placements since this feature was installed.",
   "schemaVersion": 39,
   "version": 1,
   "tags": [
@@ -18,13 +18,53 @@
     "list": [
       {
         "name": "player",
+        "label": "player",
         "type": "query",
         "datasource": {
           "type": "prometheus",
           "uid": "gregfana-prometheus"
         },
         "query": "label_values(gregfana_player_info, player)",
-        "refresh": 1,
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "action",
+        "label": "Action",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "query": "label_values(gregfana_player_stat_observed, action)",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "item",
+        "label": "Item",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gregfana-prometheus"
+        },
+        "query": "label_values(gregfana_player_stat_observed{action=~\"$action\"}, item)",
+        "refresh": 2,
+        "sort": 1,
         "includeAll": true,
         "allValue": ".*",
         "multi": true,
@@ -592,6 +632,240 @@
       "gridPos": {
         "x": 12,
         "y": 56,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime items by action (top 25)",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(25, sum by (action, item) ((gregfana_player_stat_observed{player=~\"$player\",action=~\"$action\",item=~\"$item\"} + gregfana_player_stat_imported{player=~\"$player\",action=~\"$action\",item=~\"$item\"})))",
+          "legendFormat": "{{action}} {{item}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 17,
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Lifetime selected items by player (top 25)",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(25, sum by (name, action, item) ((gregfana_player_stat_observed{player=~\"$player\",action=~\"$action\",item=~\"$item\"} + gregfana_player_stat_imported{player=~\"$player\",action=~\"$action\",item=~\"$item\"}) * on(player) group_left(name) gregfana_player_info))",
+          "legendFormat": "{{name}} {{action}} {{item}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 18,
+      "gridPos": {
+        "x": 12,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Items / minute by action (new activity only)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (action, item) (clamp_min(deriv(gregfana_player_stat_observed{player=~\"$player\",action=~\"$action\",item=~\"$item\"}[5m]), 0)) * 60",
+          "legendFormat": "{{action}} {{item}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 19,
+      "gridPos": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Blocks placed / minute by item",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (item) (rate(gregfana_player_blocks_placed_by_item_total{player=~\"$player\",item=~\"($item)(:[0-9]+)?\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{item}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "x": 12,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Blocks placed since installation (top 25)",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(25, sum by (item) (gregfana_player_blocks_placed_by_item_total{player=~\"$player\",item=~\"($item)(:[0-9]+)?\"}))",
+          "legendFormat": "{{item}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "x": 0,
+        "y": 80,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Blocks placed by player",
+      "type": "bargauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gregfana-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (name) (gregfana_player_blocks_placed_by_item_total{player=~\"$player\",item=~\"($item)(:[0-9]+)?\"} * on(player) group_left(name) gregfana_player_info)",
+          "legendFormat": "{{name}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 22,
+      "gridPos": {
+        "x": 12,
+        "y": 80,
         "w": 12,
         "h": 8
       }

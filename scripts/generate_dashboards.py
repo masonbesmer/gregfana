@@ -15,19 +15,29 @@ def panel(title, expr, unit="short", kind="timeseries", legend="{{player}}"):
     }
 
 
-def write(name, panels, variable=None, description=""):
+def bars(title, expr, legend):
+    """Horizontal bar gauge of the latest value per series (instant query)."""
+    p = panel(title, expr, kind="bargauge", legend=legend)
+    p["targets"][0]["instant"] = True
+    p["options"] = {"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": True,
+                    "reduceOptions": {"calcs": ["lastNotNull"], "values": False}}
+    return p
+
+
+def variable(key, metric, label=None):
+    return {
+        "name": key, "label": label or key, "type": "query", "datasource": DATASOURCE,
+        "query": f"label_values({metric}, {key})", "refresh": 2, "sort": 1,
+        "includeAll": True, "allValue": ".*", "multi": True,
+        "current": {"text": "All", "value": "$__all"},
+    }
+
+
+def write(name, panels, variables=(), description=""):
     for i, p in enumerate(panels):
         p["id"] = i + 1
         p["gridPos"] = {"x": (i % 2) * 12, "y": (i // 2) * 8, "w": 12, "h": 8}
-    variables = []
-    if variable:
-        key, metric = variable
-        variables.append({
-            "name": key, "type": "query", "datasource": DATASOURCE,
-            "query": f"label_values({metric}, {key})", "refresh": 1,
-            "includeAll": True, "allValue": ".*", "multi": True,
-            "current": {"text": "All", "value": "$__all"},
-        })
+    variables = list(variables)
     dashboard = {
         "uid": "gregfana-" + name, "title": "Gregfana / " + name.title(),
         "description": description, "schemaVersion": 39, "version": 1,
@@ -66,9 +76,32 @@ def players():
     panels.append(panel("Registered statistics: observed since installation", 
                         'gregfana_player_stat_observed{player=~"$player"}', legend="{{player}} / {{stat}}"))
     panels.append(panel("AFK source available", 'gregfana_source_available{source="serverutilities_afk"}', kind="stat"))
-    write("players", panels, ("player", "gregfana_player_info"),
+    # Per-item breakdowns. Stat items are registry names; event counters append ":meta".
+    stat = 'player=~"$player",action=~"$action",item=~"$item"'
+    lifetime = f'(gregfana_player_stat_observed{{{stat}}} + gregfana_player_stat_imported{{{stat}}})'
+    placed = 'gregfana_player_blocks_placed_by_item_total{player=~"$player",item=~"($item)(:[0-9]+)?"}'
+    panels += [
+        bars("Lifetime items by action (top 25)", f"topk(25, sum by (action, item) ({lifetime}))",
+             "{{action}} {{item}}"),
+        bars("Lifetime selected items by player (top 25)",
+             f"topk(25, sum by (name, action, item) ({lifetime} * on(player) group_left(name) gregfana_player_info))",
+             "{{name}} {{action}} {{item}}"),
+        panel("Items / minute by action (new activity only)",
+              f'sum by (action, item) (clamp_min(deriv(gregfana_player_stat_observed{{{stat}}}[5m]), 0)) * 60',
+              legend="{{action}} {{item}}"),
+        panel("Blocks placed / minute by item",
+              f"sum by (item) (rate({placed}[$__rate_interval])) * 60", legend="{{item}}"),
+        bars("Blocks placed since installation (top 25)", f"topk(25, sum by (item) ({placed}))", "{{item}}"),
+        bars("Blocks placed by player",
+             f"sum by (name) ({placed} * on(player) group_left(name) gregfana_player_info)", "{{name}}"),
+    ]
+    write("players", panels, [variable("player", "gregfana_player_info"),
+                              variable("action", "gregfana_player_stat_observed", "Action"),
+                              variable("item", 'gregfana_player_stat_observed{action=~"$action"}', "Item")],
           "Lifetime = observed + optional imported baseline. Time is game ticks / 20, not wall time. "
-          "Imports never affect activity rates. Missing data does not imply zero; check source health.")
+          "Imports never affect activity rates. Missing data does not imply zero; check source health. "
+          "Action/Item filter the per-item panels; 'used' includes block placement, 'Blocks placed' counts only "
+          "placements since this feature was installed.")
 
 
 def production():
@@ -95,7 +128,7 @@ def production():
     panels.append(panel("Consumed items by resource / minute",
         'rate(gregfana_machine_items_consumed_by_resource_total{machine=~"$machine"}[$__rate_interval]) * 60',
         legend="{{machine}} / {{item}}"))
-    write("production", panels, ("machine", "gregfana_machines_loaded"),
+    write("production", panels, [variable("machine", "gregfana_machines_loaded")],
           "Only supported processing is counted. Outputs are generated resources at completion, including voided output; "
           "they are not inventory deliveries. ME/dual-input/custom processing is unavailable. See coverage documentation.")
 

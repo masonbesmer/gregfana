@@ -4,14 +4,15 @@ All metrics use the `gregfana_` prefix. No arbitrary NBT, coordinates, recipe ID
 
 | Family | Type / labels | Meaning |
 |---|---|---|
-| `player_stat_observed`, `player_stat_imported` | Gauge; `player`, `stat` | Raw registered-stat units since installation / optional historical baseline |
+| `player_stat_observed`, `player_stat_imported` | Gauge; `player`, `stat`, plus `action`, `item` on per-item stats | Raw registered-stat units since installation / optional historical baseline |
 | `player_<category>_observed`, `player_<category>_imported` | Gauge; `player` | Aggregated categories listed below |
 | `player_info` | Gauge=1; `player`, `name` | UUID-to-current-name mapping |
 | `player_online` | Gauge; `player` | Online state |
 | `player_crafting_operations_total` | Counter; `player` | Completed supported manual crafting pickups |
 | `player_manual_crafting_items_total` | Counter; `player` | Actual manual crafting output quantity |
 | `player_items_consumed_total` | Counter; `player` | Completed food/potion consumption |
-| `player_<action>_by_item_total` | Counter; `player`, `item` | Detail for the preceding three action counters |
+| `player_blocks_placed_total` | Counter; `player` | Block placements by players (Forge `PlaceEvent`, not cancelled); counted from installation of this version |
+| `player_<action>_by_item_total` | Counter; `player`, `item` | Detail for the preceding four action counters; `item` is `registry:meta` |
 | `machine_runs_started_total`, `machine_runs_completed_total` | Counter; `machine`, `recipe_map` | Processing runs |
 | `machine_recipes_completed_total` | Counter; `machine`, `recipe_map` | Executions including GT parallel/batch multiplier |
 | `machine_items_consumed_total`, `machine_items_produced_total` | Counter; `machine`, `recipe_map` | Physical input units / generated outputs |
@@ -32,3 +33,5 @@ Player categories: `play_seconds`, `afk_seconds`, `active_seconds`, `blocks_mine
 Source-derived values are gauges because source statistics may be reset/changed externally, and derived active-time values can change when AFK settings change. Use `clamp_min(deriv(..._observed[5m]), 0)` for source-derived activity trends. Event/machine counters use `rate(..._total[5m])`. Never apply rate calculations to imported history or lifetime sums.
 
 Only known nonzero statistics and previously observed statistics are materialized. Missing statistics may be filtered, unsupported, or not yet observed. The coverage/health panels must be consulted before interpreting an absent series.
+
+Per-item statistics (`stat.mineBlock.*`, `stat.craftItem.*`, `stat.useItem.*`, `stat.breakItem.*`) carry `action` = `mined` / `crafted` / `used` / `broken` and `item` = registry name (e.g. `minecraft:log`, `Natura:BerryBush`). Vanilla numeric IDs are resolved through the block (mined) or item registry; an unresolvable ID stays numeric. Stats do not distinguish metadata. Minecraft has no placement statistic: placing a block increments `used`, while `player_blocks_placed_*` counts placements directly.

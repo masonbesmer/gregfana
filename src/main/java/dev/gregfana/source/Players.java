@@ -1,8 +1,12 @@
 package dev.gregfana.source;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
 import net.minecraft.stats.StatBase;
 import net.minecraft.stats.StatList;
 
@@ -19,6 +23,8 @@ public final class Players {
     private final Metrics metrics;
     private final PlayerLedger ledger;
     public final Map<String, String> names = new LinkedHashMap<>();
+    // statId -> {action, item}; the array is empty for statistics that are not per-item.
+    private final Map<String, String[]> statItems = new HashMap<>();
 
     public Players(Config config, Metrics metrics, PlayerLedger ledger) {
         this.config = config;
@@ -69,6 +75,11 @@ public final class Players {
                     .matches()) continue;
                 PlayerLedger.Entry e = stat.getValue();
                 Map<String, String> labels = Metrics.labels("player", player.getKey(), "stat", statId);
+                String[] item = statItem(statId);
+                if (item.length > 0) {
+                    labels.put("action", item[0]);
+                    labels.put("item", item[1]);
+                }
                 // Source values can be administratively reset: generic values are gauges, not counters.
                 metrics.gauge("gregfana_player_stat_observed", labels, e.observed, true);
                 metrics.gauge("gregfana_player_stat_imported", labels, e.imported ? e.baseline : 0, true);
@@ -100,6 +111,20 @@ public final class Players {
             afkEnabled() ? 1 : 0,
             false);
         metrics.gauge("gregfana_source_resets", Metrics.labels(), ledger.resets, false);
+    }
+
+    private String[] statItem(String id) {
+        return statItems.computeIfAbsent(id, k -> {
+            String[] result = Items.stat(k, n -> {
+                Block block = Block.getBlockById(n);
+                return block == null || (block == Blocks.air && n != 0) ? null
+                    : Block.blockRegistry.getNameForObject(block);
+            }, n -> {
+                Item item = Item.getItemById(n);
+                return item == null ? null : Item.itemRegistry.getNameForObject(item);
+            });
+            return result == null ? new String[0] : result;
+        });
     }
 
     private String category(String id) {

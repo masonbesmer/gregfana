@@ -18,13 +18,15 @@
     "list": [
       {
         "name": "machine",
+        "label": "machine",
         "type": "query",
         "datasource": {
           "type": "prometheus",
           "uid": "gregfana-prometheus"
         },
         "query": "label_values(gregfana_machines_loaded, machine)",
-        "refresh": 1,
+        "refresh": 2,
+        "sort": 1,
         "includeAll": true,
         "allValue": ".*",
         "multi": true,
